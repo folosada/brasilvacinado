@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Serverless Application Management Stack for BrasilVacinado DynamoDB.
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Resources:
+  VaccinationIndexTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: iso_code
+          AttributeType: S
+      KeySchema:
+        - AttributeName: iso_code
+          KeyType: HASH
+
+  HistoricTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: iso_code
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: iso_code
+          KeyType: HASH
+        - AttributeName: date
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: time_to_live
+        Enabled: False
+
+Outputs:
+  VaccinationIndexTableName:
+    Description: Vaccination Index table name
+    Value:
+      Ref: VaccinationIndexTable
+    Export:
+      Name: !Sub ${AWS::StackName}:VaccinationIndexTable
+  HistoricTableName:
+    Description: Historic vaccination table name
+    Value:
+      Ref: HistoricTable
+    Export:
+      Name: !Sub ${AWS::StackName}:HistoricTable
+

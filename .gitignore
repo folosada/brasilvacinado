@@ -1,0 +1,9 @@
+**/node_modules
+**/.aws-sam/
+**/.vscode/
+**/*.toml
+**/venv
+**/__pycache__
+data-extract/lib/pandas-python-3.8/
+brasilvacinadoweb/temp/*
+brasilvacinadoweb/logs/*

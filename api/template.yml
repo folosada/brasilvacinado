@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  BrasilVacinadoAPI
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Parameters:
+  DynamoDBStackName:
+    Type: String
+
+Resources:
+
+  BrasilVacinadoAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+      OpenApiVersion: 3.0.0
+      Cors:
+        AllowMethods: "'OPTIONS, GET'"
+        AllowHeaders: "'Content-Type,Access-Control-Allow-Origin'"
+        AllowOrigin: "'*'"
+      MethodSettings:
+        - ResourcePath: "/vaccination"
+          HttpMethod: "GET"
+          ThrottlingRateLimit: 2000
+          ThrottlingBurstLimit: 1000
+        - ResourcePath: "/graphic"
+          HttpMethod: "GET"
+          ThrottlingRateLimit: 2000
+          ThrottlingBurstLimit: 1000
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: './api.yaml'
+
+  GetVaccinationDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-vaccination-data.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName:
+              Fn::ImportValue: !Sub ${DynamoDBStackName}:VaccinationIndexTable
+      Environment:
+        Variables:
+          VACCINATION_TABLE_NAME:
+            Fn::ImportValue: !Sub ${DynamoDBStackName}:VaccinationIndexTable
+
+  ConfigLambdaGetVaccinationDataPermission:
+    Type: "AWS::Lambda::Permission"
+    DependsOn:
+    - BrasilVacinadoAPI
+    - GetVaccinationDataFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetVaccinationDataFunction
+      Principal: apigateway.amazonaws.com
+
+  GetGraphicDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-graphic-data.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName:
+              Fn::ImportValue: !Sub ${DynamoDBStackName}:HistoricTable
+      Environment:
+        Variables:
+          HISTORIC_TABLE_NAME:
+            Fn::ImportValue: !Sub ${DynamoDBStackName}:HistoricTable
+
+  ConfigLambdaGetGraphicDataPermission:
+    Type: "AWS::Lambda::Permission"
+    DependsOn:
+    - BrasilVacinadoAPI
+    - GetGraphicDataFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetGraphicDataFunction
+      Principal: apigateway.amazonaws.com
+
+Outputs:
+  WebEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${BrasilVacinadoAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

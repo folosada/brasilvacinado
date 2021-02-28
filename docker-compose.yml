@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  dynamo:
+    container_name: brasilvacinado-dynamodb
+    image: amazon/dynamodb-local
+    networks:
+      - backend
+    ports:
+      - '8000:8000'
+    volumes:
+      - dynamodata:/home/dynamodblocal
+    working_dir: /home/dynamodblocal
+    command: '-jar DynamoDBLocal.jar -sharedDb -dbPath .'
+
+networks:
+  backend:
+    name: brasilvacinado-backend
+
+volumes:
+  dynamodata: {}

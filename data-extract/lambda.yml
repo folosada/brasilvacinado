@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Serverless Application Management Stack for BrasilVacinado Data Extract.
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Parameters:
+  DynamoDBStackName:
+    Description: Name from DynamoDB Stack responsible for deploy DynamoDB tables
+    Type: String
+
+Resources:
+
+  PandasLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      ContentUri: ./lib/pandas-python-3.8
+
+  BrasilVacinadoDataExtractFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Zip
+      Handler: extract.handler
+      CodeUri: ./src      
+      Timeout: 180
+      MemorySize: 500
+      Runtime: python3.8
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: 
+              Fn::ImportValue: !Sub ${DynamoDBStackName}:VaccinationIndexTable
+        - DynamoDBCrudPolicy:
+            TableName: 
+              Fn::ImportValue: !Sub ${DynamoDBStackName}:HistoricTable
+      Environment:        
+        Variables:
+          VACCINATION_TABLE_NAME: 
+            Fn::ImportValue: !Sub ${DynamoDBStackName}:VaccinationIndexTable
+          HISTORIC_TABLE_NAME: 
+            Fn::ImportValue: !Sub ${DynamoDBStackName}:HistoricTable
+      Layers:
+        - !Ref PandasLayer
+
+  EventTriggerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Event responsible for trigger lambda to extract data about vaccination      
+      ScheduleExpression: cron(0 0/8 * * ? *)
+      State: ENABLED
+      Targets: 
+        - Arn: !GetAtt BrasilVacinadoDataExtractFunction.Arn
+          Id: ExtractionDataFromOWID
+
+  ConfigLambdaDataExtractPermission:
+    Type: "AWS::Lambda::Permission"
+    DependsOn:    
+      - BrasilVacinadoDataExtractFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref BrasilVacinadoDataExtractFunction
+      Principal: events.amazonaws.com      
+      SourceArn: !GetAtt EventTriggerRule.Arn

@@ -1,0 +1,207 @@
+openapi: 3.0.0
+info:
+  title: Brasil Vacinado API
+  contact:
+    name: Flávio Omar Losada
+    url: https://www.linkedin.com/in/folosada/
+  version: 1.0.0
+
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  params:
+    validateRequestBody: false
+    validateRequestParameters: true
+  body:
+    validateRequestBody: true
+    validateRequestParameters: false
+
+components:
+  parameters:
+    InitialDate:
+      in: query
+      name: initialDate
+      required: true
+      schema:
+        type: string
+        format: date
+    FinalDate:
+      in: query
+      name: finalDate
+      required: true
+      schema:
+        type: string
+        format: date
+  schemas:
+    VaccinationData:
+      type: array
+      items:
+        type: object
+        properties:
+          iso_code:
+            type: string
+          date:
+            type: string
+          total_vaccinations:
+            type: number
+    HistoricData:
+      type: array
+      items:
+        type: object
+        properties:
+          iso_code:
+            type: string
+          date:
+            type: string
+            format: date-time
+          total_vaccinations:
+            type: number
+          new_vaccinations:
+            type: number
+
+  responses:
+    UnauthorizedError:
+      description: API key is missing or invalid
+      headers:
+        WWW_Authenticate:
+          schema:
+            type: string
+    Options:
+      headers:
+        Access-Control-Allow-Origin:
+          schema:
+            type: string
+        Access-Control-Allow-Methods:
+          schema:
+            type: string
+        Access-Control-Allow-Headers:
+          schema:
+            type: string
+      content: {}
+paths:
+  /vaccination:
+    options:
+      tags:
+        - CORS
+      responses:
+        '200':
+          $ref: '#/components/responses/Options'
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+              method.response.header.Access-Control-Allow-Methods: '''*'''
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            responseTemplates:
+              application/json: |
+                {}
+    get:
+      summary: Returns vaccination data
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetVaccinationDataFunction.Arn}/invocations
+        passthorughBehavior: when_no_match
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+              method.response.header.Access-Control-Allow-Methods: '''*'''
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            responseTemplates:
+              application/json: |
+                {}
+      responses:
+        '200':
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccinationData'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /graphic:
+    options:
+      tags:
+        - CORS
+      responses:
+        '200':
+          $ref: '#/components/responses/Options'
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+              method.response.header.Access-Control-Allow-Methods: '''*'''
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            responseTemplates:
+              application/json: |
+                {}
+    get:
+      summary: Returns data to build the graphic
+      x-amazon-apigateway-request-validator: params
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetGraphicDataFunction.Arn}/invocations
+        passthorughBehavior: when_no_match
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+              method.response.header.Access-Control-Allow-Methods: '''*'''
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            responseTemplates:
+              application/json: |
+                {}
+      parameters:
+        - $ref: '#/components/parameters/InitialDate'
+        - $ref: '#/components/parameters/FinalDate'
+      responses:
+        '200':
+          description: All items are returned in array with total items and total items value
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoricData'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

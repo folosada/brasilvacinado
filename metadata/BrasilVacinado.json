@@ -1,0 +1,41 @@
+{
+  "ModelName": "BrasilVacinado",
+  "ModelMetadata": {
+    "Author": "Flávio Omar Losada",
+    "DateCreated": "Mar 11, 2021, 11:47 PM",
+    "DateLastModified": "Mar 11, 2021, 11:51 PM",
+    "Description": "Twitter: @flavio_losada",
+    "AWSService": "Amazon DynamoDB",
+    "Version": "2.0"
+  },
+  "DataModel": [
+    {
+      "TableName": "HistoricTable",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "iso_code",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "date",
+          "AttributeType": "S"
+        }
+      },
+      "DataAccess": {
+        "MySql": {}
+      }
+    },
+    {
+      "TableName": "VaccinationIndexTable",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "iso_code",
+          "AttributeType": "S"
+        }
+      },
+      "DataAccess": {
+        "MySql": {}
+      }
+    }
+  ]
+}
