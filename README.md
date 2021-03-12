@@ -2,6 +2,8 @@
 
 Projeto que coleta dados sobre vacinação no Brasil e divulga em um website. | Project to collect Brazil vaccination data and presents in website.
 
+https://brasilvacinado.com.br
+
 ## Proposta | Purpose
 
 A proposta do projeto é apresentar, de maneira simples e direta, os dados de vacinação do Brasil e do mundo. Os dados são coletados do portal [Our World In Data](https://ourworldindata.org/covid-vaccinations) e armazenados em um banco de dados próprio da aplicação. Estes dados são coletados com um intervalo de 8 horas, resultando em três coletas por dia.
